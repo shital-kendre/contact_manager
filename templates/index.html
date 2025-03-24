@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact Manager</title>
+    <style>
+        body {
+            background-image: url("{{ url_for('static', filename='contact_image.jpg') }}");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: Arial, sans-serif;
+            color: white;
+            text-shadow: 1px 1px 5px black;
+        }
+
+        h2 {
+            margin-bottom: 20px;
+        }
+
+        input {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        button {
+            padding: 10px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        table {
+            width: 80%;
+            border-collapse: collapse;
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+            border: 1px solid white;
+        }
+
+        th {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+    </style>
+    <script>
+        const API_URL = "http://localhost:8888/contacts";
+
+        function fetchContacts() {
+            fetch(API_URL)
+                .then(response => response.json())
+                .then(data => {
+                    let tableBody = document.getElementById("contactsTableBody");
+                    tableBody.innerHTML = "";
+                    data.forEach(contact => {
+                        tableBody.innerHTML += `<tr>
+                            <td>${contact.id}</td>
+                            <td>${contact.name}</td>
+                            <td>${contact.phone}</td>
+                            <td>
+                                <button onclick="editContact(${contact.id})">Edit</button>
+                                <button onclick="deleteContact(${contact.id})">Delete</button>
+                            </td>
+                        </tr>`;
+                    });
+                })
+                .catch(error => console.error("Error fetching contacts:", error));
+        }
+
+        function addContact() {
+            const name = document.getElementById("name").value.trim();
+            const phone = document.getElementById("phone").value.trim();
+
+            if (!name || !phone) {
+                alert("Both Name and Phone are required!");
+                return;
+            }
+
+            fetch(API_URL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, phone })
+            })
+            .then(response => response.json())
+            .then(() => {
+                fetchContacts();
+                document.getElementById("name").value = "";
+                document.getElementById("phone").value = "";
+            })
+            .catch(error => console.error("Error adding contact:", error));
+        }
+
+        function deleteContact(id) {
+            fetch(`${API_URL}/${id}`, { method: "DELETE" })
+                .then(() => fetchContacts())
+                .catch(error => console.error("Error deleting contact:", error));
+        }
+
+        function editContact(id) {
+            const newName = prompt("Enter new name:");
+            const newPhone = prompt("Enter new phone:");
+
+            if (newName && newPhone) {
+                fetch(`${API_URL}/${id}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name: newName, phone: newPhone })
+                })
+                .then(() => fetchContacts())
+                .catch(error => console.error("Error updating contact:", error));
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", fetchContacts);
+    </script>
+</head>
+<body>
+    <h2>Contact Manager</h2>
+    <input type="text" id="name" placeholder="Enter Name">
+    <input type="text" id="phone" placeholder="Enter Phone">
+    <button onclick="addContact()">Add Contact</button>
+    <br><br>
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="contactsTableBody"></tbody>
+    </table>
+</body>
+</html>
